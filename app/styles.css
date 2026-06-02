@@ -565,3 +565,374 @@ h1 span{font-size:30px;font-weight:780;letter-spacing:-.02em;color:#1f2937}.hero
   .miniTable.compact > div span:nth-child(3)::before{content:"涨跌幅：";color:#667085;font-weight:700;}
   .miniTable.compact > div span:nth-child(4)::before{content:"当日估算收益：";color:#667085;font-weight:700;}
 }
+/* final polish */
+.modalActions a{
+  font-size:14px!important;
+  font-weight:700!important;
+}
+
+.modalActions .primary{
+  font-size:14px!important;
+  padding:10px 14px!important;
+}
+
+.heroCard b{
+  font-size:16px!important;
+}
+
+.heroCard p,
+.heroCard small{
+  font-size:13px!important;
+  line-height:1.65!important;
+}
+
+.footer{
+  font-size:12px!important;
+}
+
+.footer .linkBtn{
+  display:none!important;
+}
+/* 手机端 02/04 卡片压缩：减少详情距离 */
+@media (max-width: 768px){
+  .metrics{
+    grid-template-columns:1fr 1fr!important;
+    gap:10px!important;
+  }
+
+  .metrics .metricCard,
+  .metrics button{
+    min-height:82px!important;
+    padding:12px!important;
+    border-radius:14px!important;
+  }
+
+  .metrics b{
+    font-size:20px!important;
+  }
+
+  .metrics span,
+  .metricTitleLine>span{
+    font-size:12px!important;
+  }
+
+  .newsStats{
+    grid-template-columns:1fr 1fr!important;
+    gap:10px!important;
+  }
+
+  .newsStats button{
+    min-height:72px!important;
+    padding:12px!important;
+    border-radius:14px!important;
+  }
+
+  .newsStats span{
+    font-size:12px!important;
+  }
+
+  .newsStats b{
+    font-size:18px!important;
+  }
+}
+/* 手机端 02 基金明细卡片压缩 */
+@media (max-width: 768px){
+  .dRow{
+    padding:9px 12px!important;
+    margin-bottom:8px!important;
+    border-radius:12px!important;
+  }
+
+  .dRow span{
+    padding:3px 0!important;
+    min-height:0!important;
+    line-height:1.35!important;
+    font-size:13px!important;
+  }
+
+  .dRow span::before{
+    font-size:13px!important;
+  }
+
+  .themeTag{
+    padding:2px 7px!important;
+    font-size:11.5px!important;
+  }
+}
+/* 手机端 02 明细：恢复舒展卡片 + 基金名称优雅换行 */
+@media (max-width: 768px){
+  .dRow{
+    padding:12px 14px!important;
+    margin-bottom:10px!important;
+    border-radius:14px!important;
+  }
+
+  .dRow span{
+    padding:4px 0!important;
+    line-height:1.45!important;
+    font-size:13.5px!important;
+  }
+
+  .dRow span::before{
+    font-size:13px!important;
+    white-space:nowrap!important;
+  }
+
+  .dRow span[data-label="基金名称"]{
+    display:grid!important;
+    grid-template-columns:72px 1fr!important;
+    gap:10px!important;
+    align-items:start!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    line-height:1.55!important;
+  }
+
+  .dRow span[data-label="基金名称"]::before{
+    content:"名称："!important;
+  }
+
+  .dRow span[data-label="当日估算收益"]{
+    display:grid!important;
+    grid-template-columns:72px 1fr!important;
+    gap:10px!important;
+    align-items:center!important;
+    white-space:nowrap!important;
+  }
+
+  .dRow span[data-label="当日估算收益"]::before{
+    content:"收益："!important;
+  }
+
+  .dRow span[data-label="当日估算收益"]{
+    text-align:right!important;
+  }
+}
+/* 手机端 02 指标卡片整体压缩 */
+@media (max-width: 768px){
+  .metrics{
+    gap:8px!important;
+  }
+
+  .metrics .metricCard,
+  .metrics button{
+    min-height:68px!important;
+    padding:9px 10px!important;
+    border-radius:12px!important;
+  }
+
+  .metrics .metricTitleLine{
+    margin-bottom:4px!important;
+    gap:4px!important;
+  }
+
+  .metrics .metricTitleLine>span,
+  .metrics button span{
+    font-size:11.5px!important;
+    margin-bottom:4px!important;
+  }
+
+  .metrics b,
+  .metrics .metricCard b{
+    font-size:18px!important;
+    line-height:1.1!important;
+  }
+
+  .metrics em{
+    font-size:11px!important;
+    margin-top:3px!important;
+  }
+
+  .amountToggle{
+    width:17px!important;
+    height:17px!important;
+    min-width:17px!important;
+    min-height:17px!important;
+  }
+
+  .amountToggle svg{
+    width:13px!important;
+    height:13px!important;
+  }
+}
+/* 手机端 02 风险卡片统一视觉 */
+@media (max-width: 768px){
+  .metrics button:last-child{
+    justify-content:center!important;
+    gap:2px!important;
+  }
+
+  .metrics button:last-child span{
+    font-size:13px!important;
+    margin-bottom:4px!important;
+    line-height:1.2!important;
+  }
+
+  .metrics button:last-child b{
+    font-size:18px!important;
+    line-height:1.05!important;
+  }
+
+  .metrics button:last-child em{
+    font-size:12px!important;
+    margin-top:2px!important;
+    color:#667085!important;
+    font-weight:700!important;
+  }
+}
+/* 02 风险卡片与其他指标卡统一 */
+.metrics > button:last-child{
+  min-height:108px!important;
+  padding:18px!important;
+  border-radius:18px!important;
+  justify-content:center!important;
+}
+
+.metrics > button:last-child span{
+  font-size:15px!important;
+  color:#667085!important;
+  margin-bottom:8px!important;
+}
+
+.metrics > button:last-child b{
+  font-size:28px!important;
+  line-height:1.1!important;
+}
+
+@media (max-width: 768px){
+  .metrics > button:last-child{
+    min-height:68px!important;
+    padding:9px 10px!important;
+    border-radius:12px!important;
+  }
+
+  .metrics > button:last-child span{
+    font-size:11.5px!important;
+    margin-bottom:4px!important;
+  }
+
+  .metrics > button:last-child b{
+    font-size:18px!important;
+  }
+}
+/* 强制风险卡片与前三个指标卡完全一致 */
+.metrics > button:last-child{
+  text-align:left!important;
+  border:1px solid #eaecf0!important;
+  border-radius:18px!important;
+  padding:18px!important;
+  background:#fbfcfe!important;
+  box-shadow:none!important;
+  min-height:108px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-content:initial!important;
+  cursor:pointer!important;
+  transition:.22s!important;
+}
+
+.metrics > button:last-child span{
+  display:inline-flex!important;
+  align-items:center!important;
+  margin:0 0 8px!important;
+  font-size:15px!important;
+  color:#667085!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+}
+
+.metrics > button:last-child b{
+  display:block!important;
+  font-size:28px!important;
+  line-height:1.1!important;
+  font-weight:800!important;
+  color:#111827!important;
+}
+
+@media (max-width:768px){
+  .metrics > button:last-child{
+    min-height:68px!important;
+    padding:9px 10px!important;
+    border-radius:12px!important;
+  }
+
+  .metrics > button:last-child span{
+    font-size:11.5px!important;
+    margin-bottom:4px!important;
+  }
+
+  .metrics > button:last-child b{
+    font-size:18px!important;
+  }
+}
+
+/* 02 指标卡片最终统一：集中度风险按前三张样式 */
+.metrics > button.metricCard b,
+.metrics > button:last-child b{
+  font-weight:750!important;
+  font-size:28px!important;
+  letter-spacing:-0.02em!important;
+}
+
+.metrics > button.metricCard span,
+.metrics > button:last-child span{
+  font-weight:700!important;
+  color:#667085!important;
+}
+
+@media (max-width:768px){
+  .metrics > button.metricCard b,
+  .metrics > button:last-child b{
+    font-size:18px!important;
+    font-weight:700!important;
+  }
+
+  .metrics > button.metricCard span,
+  .metrics > button:last-child span{
+    font-size:11.5px!important;
+    font-weight:700!important;
+  }
+}
+/* 最终修复：集中度风险标题与前三张一致，不加粗 */
+.metrics > button:last-child span,
+.metrics > button:last-child .metricTitleLine,
+.metrics > button:last-child .metricTitleLine span,
+.metrics .metricCard:last-child span,
+.metrics .metricCard:last-child .metricTitleLine span{
+  font-weight:400!important;
+  color:#667085!important;
+}
+.metrics > button:last-child b{
+  margin-top:8px!important;
+}
+/* 02 指标卡片统一垂直位置 */
+.metrics .metricCard,
+.metrics > button:last-child{
+  justify-content:center!important;
+}
+
+.metrics .metricCard .metricTitleLine,
+.metrics > button:last-child .metricTitleLine,
+.metrics > button:last-child > span{
+  margin-bottom:8px!important;
+}
+
+.metrics .metricCard b,
+.metrics > button:last-child b{
+  margin-top:0!important;
+}
+.metrics > button:last-child b{
+  margin-top:8px!important;
+}
+
+/* 只调整集中度风险卡片内部文字位置 */
+.metrics .metricCard:last-child .metricTitleLine,
+.metrics .metricCard:last-child b{
+  transform:translateY(-5px)!important;
+}
+/* 只下移集中度风险标题 */
+.metrics .metricCard:last-child .metricTitleLine{
+  transform:translateY(2px)!important;
+}
