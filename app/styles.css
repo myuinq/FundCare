@@ -936,3 +936,91 @@ h1 span{font-size:30px;font-weight:780;letter-spacing:-.02em;color:#1f2937}.hero
 .metrics .metricCard:last-child .metricTitleLine{
   transform:translateY(2px)!important;
 }
+/* final mobile holding-card alignment fix */
+@media (max-width: 768px) {
+  .dRow span {
+    display: grid !important;
+    grid-template-columns: 112px minmax(0, 1fr) !important;
+    gap: 12px !important;
+    align-items: start !important;
+    text-align: right !important;
+  }
+
+  .dRow span::before {
+    white-space: nowrap !important;
+    text-align: left !important;
+  }
+
+  .dRow span[data-label="基金名称"] {
+    grid-template-columns: 112px minmax(0, 1fr) !important;
+  }
+
+  .dRow span[data-label="基金名称"] {
+    justify-items: stretch !important;
+  }
+
+  .dRow span[data-label="基金名称"]::before {
+    white-space: nowrap !important;
+  }
+}
+/* FINAL FIX: mobile holding card label/value alignment */
+@media (max-width: 768px) {
+  .dRow span {
+    display: grid !important;
+    grid-template-columns: 118px minmax(0, 1fr) !important;
+    column-gap: 12px !important;
+    align-items: start !important;
+    width: 100% !important;
+    text-align: right !important;
+  }
+
+  .dRow span::before {
+    content: attr(data-label) "：" !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    text-align: left !important;
+    color: #667085 !important;
+    font-weight: 700 !important;
+  }
+
+  .dRow span[data-label="基金名称"] {
+    grid-template-columns: 118px minmax(0, 1fr) !important;
+  }
+
+  .dRow span[data-label="基金名称"]::before {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+}
+/* FINAL MOBILE FIX: holding detail label/value alignment */
+@media (max-width: 768px) {
+  .detailTable .dRow > span {
+    display: grid !important;
+    grid-template-columns: 7.2em minmax(0, 1fr) !important;
+    column-gap: 12px !important;
+    align-items: start !important;
+    width: 100% !important;
+    text-align: right !important;
+    white-space: normal !important;
+    word-break: normal !important;
+  }
+
+  .detailTable .dRow > span::before {
+    content: attr(data-label) "：" !important;
+    display: block !important;
+    width: 7.2em !important;
+    min-width: 7.2em !important;
+    max-width: 7.2em !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    text-align: left !important;
+    color: #667085 !important;
+    font-weight: 700 !important;
+  }
+
+  .detailTable .dRow > span[data-label="基金名称"]::before {
+    content: "基金名称：" !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+  }
+}
