@@ -10,7 +10,9 @@ async function quote(code:string){
     if(!m) throw new Error('no data');
     const d=JSON.parse(m[1]);
     const date=d.gztime||d.jzrq||new Date().toLocaleString('zh-CN',{hour12:false});
-    return {name:d.name||fallback?.name||'',rate:Number(d.gszzl??fallback?.rate??0),date,ok:true,source:'实时估算'};
+    const rawRate=Number(d.gszzl);
+    const rate=Number.isFinite(rawRate)&&String(d.gszzl||'').trim()!=='' ? rawRate : Number(fallback?.rate||0);
+    return {name:d.name||fallback?.name||'',rate,date,ok:true,source:String(d.gszzl||'').trim()!==''?'实时估算':'备用数据'};
   }catch{
     return {name:fallback?.name||'',rate:Number(fallback?.rate||0),date:fallback?'PDF演示组合备用':'',ok:!!fallback,source:fallback?'备用数据':'手动补充'};
   }

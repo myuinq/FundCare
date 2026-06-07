@@ -105,9 +105,42 @@ function parseOcrText(text:string){
    const amountMatch=near.match(/(?:持有金额|持仓金额|市值|金额|资产)?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.\d{1,2})?|[0-9]{3,}(?:\.\d{1,2})?)/g);
    let amount='';
    if(amountMatch){ const nums=amountMatch.map(x=>x.replace(/[^0-9.]/g,'')).filter(x=>Number(x)>0&&x!==code); amount=nums[nums.length-1]||''; }
-   rows.push({id:Date.now()+Math.random()+rows.length,code,amount,name:'',status:'截图识别待确认'});
+   rows.push({id:Date.now()+Math.random()+rows.length,code,amount,name:'',status:'待确认'});
  }
  return rows;
+}
+
+
+function repairOcrRowsClient(rows:FundInput[]){
+ const fixed:FundInput[]=[];
+ const clean=(r:FundInput):FundInput=>({
+   ...r,
+   code:String(r.code||'').replace(/\D/g,'').slice(0,6),
+   amount:String(r.amount||'').replace(/[,，\s]/g,''),
+   name:String(r.name||'').trim(),
+   status:'待确认'
+ });
+ const list=(rows||[]).map(clean).filter(r=>r.code||r.amount||r.name);
+ for(let i=0;i<list.length;i++){
+   const r=list[i];
+   const hasFund=!!(r.code||r.name);
+   const hasAmount=!!r.amount;
+   if(hasFund){
+     const next=list[i+1];
+     if(!hasAmount && next && !(next.code||next.name) && next.amount){
+       fixed.push({...r,amount:next.amount,status:'待确认'}); i++;
+     }else fixed.push({...r,status:'待确认'});
+   }else if(hasAmount && fixed.length && !fixed[fixed.length-1].amount){
+     fixed[fixed.length-1]={...fixed[fixed.length-1],amount:r.amount,status:'待确认'};
+   }
+ }
+ const seen=new Set<string>();
+ return fixed.filter(r=>{
+   const key=`${r.code}-${r.name}-${r.amount}`;
+   if(seen.has(key)) return false;
+   seen.add(key);
+   return !!(r.code||r.name||r.amount);
+ });
 }
 
 function parseBulkHoldings(text:string){
@@ -117,7 +150,7 @@ function parseBulkHoldings(text:string){
    const nums=[...line.matchAll(/\d+(?:,\d{3})*(?:\.\d+)?/g)].map(m=>m[0]).filter(x=>x.replace(/,/g,'')!==code);
    const amount=(nums[0]||'').replace(/,/g,'');
    const name=line.replace(code,'').replace(nums[0]||'','').replace(/[，,;；|]/g,' ').trim();
-   if(code||amount||name) rows.push({id:Date.now()+Math.random()+rows.length,code,amount,name,status:'批量粘贴待确认'});
+   if(code||amount||name) rows.push({id:Date.now()+Math.random()+rows.length,code,amount,name,status:'待确认'});
  }
  return rows;
 }
@@ -186,12 +219,37 @@ export default function Page(){
  async function handleOcr(file:File){
   setOcrLoading(true); setOcrText(''); setOcrRows([]); setError('');
   try{
-    if(!(window as any).Tesseract){ await new Promise<void>((resolve,reject)=>{const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'; s.onload=()=>resolve(); s.onerror=()=>reject(new Error('OCR库加载失败')); document.body.appendChild(s);}); }
-    const T=(window as any).Tesseract; const ret=await T.recognize(file,'chi_sim+eng',{logger:()=>{}}); const text=ret?.data?.text||''; setOcrText(text); const parsed=parseOcrText(text); setOcrRows(parsed.length?parsed:[{id:Date.now(),code:'',amount:'',name:'',status:'需手动补充'}]);
+    if(!(window as any).Tesseract){
+      await new Promise<void>((resolve,reject)=>{
+        const s=document.createElement('script');
+        s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        s.onload=()=>resolve(); s.onerror=()=>reject(new Error('OCR库加载失败'));
+        document.body.appendChild(s);
+      });
+    }
+    const T=(window as any).Tesseract;
+    const ret=await T.recognize(file,'chi_sim+eng',{logger:()=>{}});
+    const text=ret?.data?.text||'';
+    setOcrText(text);
+    let parsed=parseOcrText(text);
+    try{
+      const res=await fetch('/api/ocr-ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+      const data=await res.json();
+      if(Array.isArray(data.rows)&&data.rows.length){
+        parsed=repairOcrRowsClient(data.rows.map((r:any,i:number)=>({
+          id:Date.now()+i+Math.random(),
+          code:String(r.code||'').replace(/\D/g,'').slice(0,6),
+          amount:String(r.amount||''),
+          name:String(r.name||''),
+          status:'待确认'
+        })));
+      }
+    }catch{}
+    setOcrRows(repairOcrRowsClient(parsed).length?repairOcrRowsClient(parsed):[{id:Date.now(),code:'',amount:'',name:'',status:'需手动补充'}]);
   }catch(e:any){ setError('截图识别失败：请换一张更清晰的持仓截图，或继续手动录入。'); }
   setOcrLoading(false);
  }
- function confirmOcr(){ const valid=ocrRows.filter(r=>r.code||r.amount||r.name); if(valid.length){setFunds(valid.map((r,i)=>({...r,id:Date.now()+i,status:r.status||'截图导入待识别'}))); setOcrOpen(false); setOcrText(''); setOcrRows([]);} }
+ function confirmOcr(){ const valid=ocrRows.filter(r=>(r.code||r.name)&&r.amount); if(valid.length){setFunds(valid.map((r,i)=>({...r,id:Date.now()+i,status:r.status||'截图导入待识别'}))); setOcrOpen(false); setOcrText(''); setOcrRows([]);} }
  const themeRows=(analysis?.themeRows||[]).map((t:any,i:number)=>({...t,color:pieColors[i%pieColors.length]}));
  const maxThemeProfit=Math.max(1,...themeRows.map((r:any)=>Math.abs(r.estimatedProfit||0)));
  const sortedRows=useMemo(()=>{ const rows=[...(analysis?.rows||[])]; if(!sort.key||sort.key==='default'||!sort.dir) return rows; rows.sort((a:any,b:any)=>{ const av=a[sort.key], bv=b[sort.key]; const na=Number(av), nb=Number(bv); let cmp=0; if(!Number.isNaN(na)&&!Number.isNaN(nb)) cmp=na-nb; else cmp=String(av||'').localeCompare(String(bv||''),'zh-CN'); return sort.dir==='asc'?cmp:-cmp; }); return rows; },[analysis,sort]);
@@ -232,7 +290,7 @@ const visibleInputFunds=showAllInput?funds:funds.slice(0,defaultInputCount);
    <div className="panelHead"><div><h2>01 持仓录入与基金识别</h2><p>只需要输入基金代码和持仓金额。基金名称可自动识别；主题分类放到后续分析阶段自动完成。</p></div><div className="demoControl"><button className="ghost demoImport" onClick={importDemo}>导入演示组合</button><button className="demoGear" title="演示组合设置" aria-label="演示组合设置" aria-expanded={demoOpen} onClick={()=>setDemoOpen(v=>!v)}>⚙</button></div></div>
    <div className="inputTools"><button className="secondary" onClick={()=>setOcrOpen(!ocrOpen)}>上传持仓截图识别（Beta）</button><button onClick={()=>downloadFile('fundcare-holdings.json',JSON.stringify(funds,null,2),'application/json;charset=utf-8')}>导出持仓配置</button><button onClick={clearLocal}>清空本地数据</button></div>
    {demoOpen&&<div className="demoEditor"><div><h3>演示组合设置</h3><p>每行一只基金，支持空格、逗号或竖线分隔：基金代码 持仓金额 基金名称。该设置仅保存在当前浏览器。</p></div><textarea value={demoText} onChange={e=>{setDemoText(e.target.value);setDemoMessage('')}} spellCheck={false}/><div className="demoEditorActions"><button className="secondary" onClick={saveDemoConfig}>保存设置</button><button className="mini" onClick={resetDemoConfig}>恢复默认</button><button className="mini" onClick={()=>setDemoOpen(false)}>关闭</button></div>{demoMessage&&<p className="demoMessage">{demoMessage}</p>}</div>}
-   {ocrOpen&&<div className="ocrBox"><div className="ocrHead"><div><h3>截图辅助识别（Beta）</h3><p>支持把支付宝/基金持仓截图拖入下方区域，OCR 会先提取文字，再生成待确认列表。识别结果可能有误，需确认后才导入。</p></div><button className="mini" onClick={()=>fileRef.current?.click()}>选择截图</button><input ref={fileRef} type="file" accept="image/*" hidden onChange={e=>{const f=e.target.files?.[0]; if(f) handleOcr(f)}}/></div><div className={`dropZone ${dragging?'dragging':''}`} onDragOver={e=>{e.preventDefault();setDragging(true)}} onDragLeave={()=>setDragging(false)} onDrop={e=>{e.preventDefault();setDragging(false);const f=e.dataTransfer.files?.[0]; if(f) handleOcr(f)}}><b>拖入持仓截图到这里</b><span>或点击“选择截图”。识别失败时，可复制文字到下方批量导入。</span></div>{ocrLoading&&<p className="loading">正在识别截图文字；如果失败，可改用下方文本粘贴导入。</p>}{ocrText&&<details><summary>查看 OCR 原始文字</summary><pre>{ocrText}</pre></details>}<div className="pasteBox"><textarea placeholder="也可以粘贴持仓文本，例如：018957 3015.68 中航机遇领航混合C" value={pasteText} onChange={e=>setPasteText(e.target.value)} /><button className="secondary" onClick={()=>setOcrRows(parseBulkHoldings(pasteText))} disabled={!pasteText.trim()}>解析粘贴文本</button></div>{ocrRows.length>0&&<div className="ocrRows"><div className="row header"><span>基金代码</span><span>持仓金额</span><span>基金名称</span><span>状态</span><span>操作</span></div>{ocrRows.map(r=><div className="row" key={r.id}><input value={r.code} onChange={e=>setOcrRows(v=>v.map(x=>x.id===r.id?{...x,code:e.target.value.replace(/\D/g,'').slice(0,6)}:x))}/><input value={r.amount} onChange={e=>setOcrRows(v=>v.map(x=>x.id===r.id?{...x,amount:e.target.value}:x))}/><input placeholder="可确认后再识别" value={r.name||''} onChange={e=>setOcrRows(v=>v.map(x=>x.id===r.id?{...x,name:e.target.value}:x))}/><span className="badge manual">{r.status||'待确认'}</span><button className="mini" onClick={()=>setOcrRows(v=>v.filter(x=>x.id!==r.id))}>删除</button></div>)}</div>}<div className="actions"><button className="secondary" onClick={()=>setOcrRows(v=>[...v,{id:Date.now()+Math.random(),code:'',amount:'',name:'',status:'手动补充'}])}>+ 添加识别行</button><button className="primary" disabled={!ocrRows.length} onClick={confirmOcr}>确认导入录入表</button></div></div>}
+   {ocrOpen&&<div className="ocrBox"><div className="ocrHead"><div><h3>AI 图片识别辅助导入（Beta）</h3><p>支持把支付宝/基金持仓截图拖入下方区域，OCR 会先提取文字，再调用 AI 整理为待确认列表。识别结果可能有误，需确认后才导入。</p></div><button className="mini" onClick={()=>fileRef.current?.click()}>选择截图</button><input ref={fileRef} type="file" accept="image/*" hidden onChange={e=>{const f=e.target.files?.[0]; if(f) handleOcr(f)}}/></div><div className={`dropZone ${dragging?'dragging':''}`} onDragOver={e=>{e.preventDefault();setDragging(true)}} onDragLeave={()=>setDragging(false)} onDrop={e=>{e.preventDefault();setDragging(false);const f=e.dataTransfer.files?.[0]; if(f) handleOcr(f)}}><b>拖入持仓截图到这里</b><span>或点击“选择截图”。识别失败时，可复制文字到下方批量导入。</span></div>{ocrLoading&&<p className="loading">正在识别截图文字并调用 AI 结构化整理；如果失败，可改用下方文本粘贴导入。</p>}{ocrText&&<details><summary>查看 OCR 原始文字</summary><pre>{ocrText}</pre></details>}<div className="pasteBox"><textarea placeholder="也可以粘贴持仓文本，例如：018957 3015.68 中航机遇领航混合C" value={pasteText} onChange={e=>setPasteText(e.target.value)} /><button className="secondary" onClick={()=>setOcrRows(repairOcrRowsClient(parseBulkHoldings(pasteText)))} disabled={!pasteText.trim()}>解析粘贴文本</button></div>{ocrRows.length>0&&<div className="ocrRows"><div className="row header"><span>基金代码</span><span>持仓金额</span><span>基金名称</span><span>状态</span><span>操作</span></div>{ocrRows.map(r=><div className="row" key={r.id}><input value={r.code} onChange={e=>setOcrRows(v=>v.map(x=>x.id===r.id?{...x,code:e.target.value.replace(/\D/g,'').slice(0,6)}:x))}/><input value={r.amount} onChange={e=>setOcrRows(v=>v.map(x=>x.id===r.id?{...x,amount:e.target.value}:x))}/><input placeholder="可确认后再识别" value={r.name||''} onChange={e=>setOcrRows(v=>v.map(x=>x.id===r.id?{...x,name:e.target.value}:x))}/><span className="badge manual">{r.status||'待确认'}</span><button className="mini" onClick={()=>setOcrRows(v=>v.filter(x=>x.id!==r.id))}>删除</button></div>)}</div>}<div className="actions"><button className="secondary" onClick={()=>setOcrRows(v=>[...v,{id:Date.now()+Math.random(),code:'',amount:'',name:'',status:'手动补充'}])}>+ 添加识别行</button><button className="primary" disabled={!ocrRows.length} onClick={confirmOcr}>确认导入录入表</button></div></div>}
    <div className="inputTable"><div className="row header"><span>基金代码</span><span>持仓金额</span><span>基金名称</span><span>识别状态</span><span>操作</span></div>{visibleInputFunds.map(f=><div className="row" key={f.id}><input placeholder="如 018957" value={f.code} onChange={e=>update(f.id,{code:e.target.value.replace(/\D/g,'').slice(0,6),name:'',status:'待识别'})}/><input placeholder="如 3000" value={f.amount} onChange={e=>update(f.id,{amount:e.target.value})}/><input placeholder="点击识别后自动填写，也可手动修改" value={f.name||''} onChange={e=>update(f.id,{name:e.target.value,status:'手动填写'})}/><span className={`badge ${(f.status||'待识别').includes('已')?'ok':(f.status||'').includes('手动')||(f.status||'').includes('截图')?'manual':'wait'}`}>{f.status||'待识别'}</span><button className="mini" onClick={()=>remove(f.id)}>删除</button></div>)}</div>{funds.length>5&&<div className="tableToggle"><span>当前已录入 {funds.length} 只基金，默认显示前 {defaultInputCount} 只。</span><button className="mini" onClick={()=>setShowAllInput(!showAllInput)}>{showAllInput?'收起持仓':'展开全部持仓'}</button></div>}
    <div className="actions"><button onClick={add} className="secondary">+ 添加基金</button><button onClick={lookup} disabled={!funds.some(f=>f.code)} className="secondary">识别基金名称</button><button onClick={run} disabled={!canAnalyze} className="primary">开始智能分析</button></div>
    {loading&&<p className="loading">{loading}</p>}{error&&<p className="error">{error}</p>}

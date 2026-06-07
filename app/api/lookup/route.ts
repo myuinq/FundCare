@@ -11,7 +11,7 @@ async function fetchFund(code:string){
     if(!m) throw new Error('接口无匹配数据');
     const data=JSON.parse(m[1]);
     const name=data.name||`基金${clean}`;
-    return {code:clean,name,theme:themeFromName(name),rate:Number(data.gszzl||0),date:data.gztime||data.jzrq||'',status:'已识别'};
+    return {code:clean,name,theme:themeFromName(name),rate:(Number.isFinite(Number(data.gszzl))&&String(data.gszzl||'').trim()!==''?Number(data.gszzl):Number(FUND_MAP[clean]?.rate||0)),date:data.gztime||data.jzrq||'',status:'已识别'};
   }catch(e){
     return {code:clean,name:'',theme:'待确认',rate:0,date:'',status:'未识别'};
   }
